@@ -4,289 +4,624 @@ import random
 import os
 from groq import Groq
 
-# Page Configuration
+# ── Page Config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="CamaMomChatbot - Premium Assistant",
-    page_icon="✨",
+    page_title="CamaMomChatbot",
+    page_icon="💬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Glassmorphism CSS styling for premium look
-custom_css = """
+# ── Premium CSS ───────────────────────────────────────────────────────────────
+st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
 <style>
-/* Base theme overrides */
+/* ── Reset & Base ────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
 .stApp {
-    background: linear-gradient(135deg, #0e1117 0%, #161a24 100%);
+    background: #080b14;
+    font-family: 'Inter', sans-serif;
     color: #e2e8f0;
-    font-family: 'Outfit', 'Inter', sans-serif;
 }
 
-/* Sidebar styling */
+/* Remove Streamlit top padding */
+.block-container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 900px !important;
+}
+
+/* Hide default Streamlit decorations */
+#MainMenu, footer, header { visibility: hidden; }
+
+/* ── Animated Mesh Background ────────────────────────────── */
+.stApp::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+        radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 10%, rgba(168,85,247,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(59,130,246,0.06) 0%, transparent 50%);
+    animation: meshMove 20s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes meshMove {
+    0%   { transform: translate(0%, 0%)   rotate(0deg); }
+    100% { transform: translate(2%, 2%)   rotate(1deg); }
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
 section[data-testid="stSidebar"] {
-    background-color: rgba(22, 26, 36, 0.9) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
+    background: linear-gradient(180deg, #0d1117 0%, #0f1623 100%) !important;
+    border-right: 1px solid rgba(99,102,241,0.15) !important;
 }
 
-/* Custom card container for UI */
-.premium-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(5px);
+section[data-testid="stSidebar"] > div {
+    padding-top: 1.5rem;
 }
 
-/* Input fields styling */
-div[data-baseweb="input"] {
-    background-color: rgba(14, 17, 23, 0.8) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px !important;
-    color: #ffffff !important;
+/* ── Sidebar brand ───────────────────────────────────────── */
+.sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    padding: 0 0.25rem;
 }
 
-/* Chat Input Bar styling */
-div[data-testid="stChatInput"] {
-    border-radius: 12px !important;
-    background-color: rgba(22, 26, 36, 0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(10px);
+.sb-brand-icon {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 15px rgba(99,102,241,0.4);
 }
 
-/* Title and typography */
-h1 {
-    font-weight: 800 !important;
-    background: linear-gradient(90deg, #38bdf8 0%, #a855f7 100%);
+.sb-brand-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #a5b4fc, #c084fc);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
 }
 
-/* Mode badge */
-.badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
+/* ── Persona Card ────────────────────────────────────────── */
+.persona-card {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.05));
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 6px;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    transition: border-color 0.3s;
+}
+
+.persona-card:hover { border-color: rgba(99,102,241,0.45); }
+
+.persona-card strong {
+    display: block;
+    font-size: 0.88rem;
+    color: #c4b5fd;
+    margin-bottom: 4px;
+}
+
+/* ── Status badges ───────────────────────────────────────── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 0.78rem;
     font-weight: 600;
-    margin-bottom: 10px;
+    letter-spacing: 0.3px;
 }
-.badge-simulated {
-    background-color: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-}
-.badge-ai {
-    background-color: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-</style>
-"""
-st.markdown(custom_css, unsafe_allow_html=True)
 
-# Persona Configurations
+.status-badge.ai {
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: #34d399;
+}
+
+.status-badge.sim {
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.3);
+    color: #fbbf24;
+}
+
+.status-badge .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-badge.ai   .dot { background: #34d399; }
+.status-badge.sim  .dot { background: #fbbf24; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1;   transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Divider ─────────────────────────────────────────────── */
+.sb-divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin: 1rem 0;
+}
+
+/* ── Sidebar footer ──────────────────────────────────────── */
+.sb-footer {
+    text-align: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 0.72rem;
+    margin-top: 1.5rem;
+    line-height: 1.8;
+}
+
+/* ── Main header ─────────────────────────────────────────── */
+.main-header {
+    text-align: center;
+    padding: 1.8rem 1rem 1.2rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.main-header h1 {
+    font-size: 2.4rem !important;
+    font-weight: 900 !important;
+    background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #38bdf8 100%);
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 0.4rem;
+}
+
+.main-header p {
+    color: #64748b;
+    font-size: 0.92rem;
+    margin: 0;
+}
+
+/* Decorative glow under header */
+.main-header::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #a855f7);
+    border-radius: 100px;
+    margin: 0.8rem auto 0;
+    opacity: 0.7;
+}
+
+/* ── Welcome screen ──────────────────────────────────────── */
+.welcome-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 2rem 1rem;
+}
+
+.welcome-icon-ring {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15));
+    border: 2px solid rgba(99,102,241,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 0 40px rgba(99,102,241,0.15);
+}
+
+.welcome-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #c4b5fd;
+    text-align: center;
+}
+
+.welcome-sub {
+    font-size: 0.85rem;
+    color: #475569;
+    text-align: center;
+    max-width: 380px;
+    line-height: 1.6;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin-top: 8px;
+}
+
+.suggestion-chip {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    line-height: 1.4;
+}
+
+.suggestion-chip:hover {
+    background: rgba(99,102,241,0.08);
+    border-color: rgba(99,102,241,0.3);
+    color: #c4b5fd;
+}
+
+/* ── Chat messages ───────────────────────────────────────── */
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+    padding: 0.3rem 0 !important;
+}
+
+/* User messages */
+[data-testid="stChatMessage"][data-testid*="user"],
+.stChatMessage.user {
+    flex-direction: row-reverse !important;
+}
+
+/* Content bubble */
+[data-testid="stChatMessageContent"] {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 16px !important;
+    padding: 12px 16px !important;
+    font-size: 0.9rem !important;
+    line-height: 1.65 !important;
+    max-width: 82% !important;
+    color: #e2e8f0 !important;
+}
+
+/* ── Input area ──────────────────────────────────────────── */
+.stChatInputContainer {
+    position: sticky;
+    bottom: 0;
+    background: rgba(8,11,20,0.9) !important;
+    backdrop-filter: blur(20px);
+    padding: 12px 0 !important;
+    border-top: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(99,102,241,0.25) !important;
+    border-radius: 16px !important;
+    color: #e2e8f0 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.9rem !important;
+    padding: 14px 18px !important;
+    transition: border-color 0.2s;
+}
+
+[data-testid="stChatInput"] textarea:focus {
+    border-color: rgba(99,102,241,0.6) !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.08) !important;
+}
+
+/* ── Selectbox / text_input ──────────────────────────────── */
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"]  > div {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 10px !important;
+    color: #e2e8f0 !important;
+    font-size: 0.85rem !important;
+}
+
+/* ── Clear button ────────────────────────────────────────── */
+[data-testid="stButton"] button {
+    background: rgba(239,68,68,0.08) !important;
+    border: 1px solid rgba(239,68,68,0.2) !important;
+    color: #fca5a5 !important;
+    border-radius: 10px !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s !important;
+}
+
+[data-testid="stButton"] button:hover {
+    background: rgba(239,68,68,0.18) !important;
+    border-color: rgba(239,68,68,0.45) !important;
+}
+
+/* ── Label text ──────────────────────────────────────────── */
+label, .stSelectbox label, .stTextInput label {
+    color: #64748b !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: rgba(99,102,241,0.25);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.45); }
+
+/* ── Stagger fade-in for messages ────────────────────────── */
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+[data-testid="stChatMessage"] {
+    animation: fadeSlideUp 0.3s ease forwards;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# ── Personas ──────────────────────────────────────────────────────────────────
 PERSONAS = {
     "😊 Asisten Ramah": {
-        "description": "Asisten yang hangat, ramah, dan siap membantu segala kebutuhan Anda dengan penuh empati.",
+        "description": "Hangat, ramah, dan penuh empati untuk semua kebutuhan Anda.",
         "system_instruction": "Anda adalah asisten AI yang hangat, ramah, sopan, dan sangat berempati. Gunakan bahasa Indonesia yang santun namun akrab. Bantu pengguna dengan senang hati.",
         "avatar": "😊",
+        "suggestions": ["Apa itu AI?", "Ceritakan tentang dirimu", "Tips produktivitas", "Cara belajar coding"],
         "mock_responses": [
-            "Halo! Ada yang bisa saya bantu hari ini? Saya senang sekali bisa menemani Anda. 😊",
-            "Wah, itu pertanyaan yang menarik sekali! Mari kita cari solusinya bersama-sama.",
-            "Tentu saja, saya siap membantu Anda menyelesaikan hal itu. Apa lagi yang ingin Anda ketahui?",
-            "Terima kasih sudah bertanya! Semoga penjelasan saya cukup membantu ya. Jika ada hal lain, tanyakan saja. ✨",
-            "Jangan khawatir, kita bisa selesaikan ini selangkah demi selangkah. Tetap semangat!"
+            "Halo! Ada yang bisa saya bantu hari ini? Saya siap menemani Anda. 😊",
+            "Wah, itu pertanyaan menarik! Mari kita cari jawabannya bersama-sama.",
+            "Tentu saja! Saya dengan senang hati membantu Anda.",
+            "Terima kasih sudah bertanya! Semoga penjelasan saya bermanfaat. ✨",
+            "Jangan khawatir, kita selesaikan ini selangkah demi selangkah. Semangat!"
         ]
     },
     "💻 Pakar Teknologi": {
-        "description": "Insinyur perangkat lunak senior yang memberikan jawaban teknis, terstruktur, mendalam, dan menggunakan sintaks kode.",
+        "description": "Software engineer senior yang memberikan jawaban teknis mendalam.",
         "system_instruction": "You are an expert technical advisor and software engineer. Provide detailed, well-structured, and technically accurate answers. Use markdown formatting, bullet points, and code blocks where appropriate. Respond in Indonesian, but maintain professional tech terminology.",
         "avatar": "💻",
+        "suggestions": ["Jelaskan REST API", "Apa itu Docker?", "Tips debug Python", "Beda SQL vs NoSQL"],
         "mock_responses": [
-            "Mari kita analisis secara teknis. 🛠️ Masalah ini biasanya terjadi karena konflik dependensi atau kesalahan konfigurasi runtime.",
-            "Berdasarkan best practice arsitektur modern, solusi optimal untuk case ini melibatkan optimasi algoritma runtime. Berikut kodenya:\n```python\n# Contoh implementasi optimis\ndef optimize_process(data):\n    return [item for item in data if item.is_valid()]\n```",
-            "Saya sarankan untuk memeriksa log debugging terlebih dahulu. ⚡ Apakah Anda melihat error code tertentu pada terminal?",
-            "Langkah integrasi ini sangat mudah. Pastikan environment variables sudah di-set dengan benar sebelum inisialisasi modul. 🚀",
-            "Secara umum, efisiensi waktu operasi ini adalah O(log n). Kita bisa memangkas kompleksitas dengan menambahkan caching layer."
+            "Dari sisi teknis, ini melibatkan beberapa layer arsitektur yang perlu diperhatikan. 🛠️",
+            "Saya rekomendasikan mengecek log error terlebih dahulu. ⚡",
+            "Best practice untuk case ini adalah menggunakan design pattern yang tepat.",
+            "Kompleksitas algoritmanya O(log n) — kita bisa optimalkan dengan caching.",
+            "Pastikan environment variable sudah dikonfigurasi sebelum inisialisasi modul. 🚀"
         ]
     },
     "✍️ Penulis Kreatif": {
-        "description": "Pribadi puitis yang menggunakan metafora indah, deskripsi kaya, dan gaya penulisan naratif.",
+        "description": "Jiwa puitis yang merangkai kata dengan metafora indah.",
         "system_instruction": "Anda adalah seorang penulis kreatif, sastrawan, dan pemikir puitis. Gunakan metafora yang indah, kalimat deskriptif yang kaya estetika, dan gaya bercerita yang memikat dalam bahasa Indonesia.",
         "avatar": "✍️",
+        "suggestions": ["Tulis puisi tentang hujan", "Buatkan cerita pendek", "Bantu menulis email", "Ide konten kreatif"],
         "mock_responses": [
-            "Bayangkan pikiran Anda bagaikan kanvas kosong yang luas, dan setiap pertanyaan adalah goresan kuas warna-warni yang siap melukis keindahan. 🎨",
-            "Ide-ide cemerlang sering kali berbisik pelan di sela-sela kesunyian malam, menanti jemari Anda menuliskannya menjadi barisan kalimat yang abadi.",
-            "Mari kita jelajahi samudera imajinasi ini bersama-sama, berlayar melintasi ombak kata-kata untuk menemukan pulau kreativitas baru. ⛵",
-            "Seperti embun pagi yang membasahi dedaunan, semoga jawaban sederhana ini bisa memberikan kesegaran bagi dahaga penasaran Anda.",
-            "Kisah terbaik tidak ditulis dalam sekali duduk; ia diukir dari rasa ingin tahu yang tak pernah padam."
+            "Bayangkan pikiran Anda sebagai kanvas luas, dan setiap pertanyaan adalah sapuan kuas. 🎨",
+            "Ide-ide terbaik sering hadir dalam kesunyian malam, menunggu dijelmakan menjadi kata.",
+            "Mari berlayar bersama di samudera imajinasi yang tak bertepi. ⛵",
+            "Seperti embun pagi di dedaunan, semoga jawaban ini menyegarkan rasa ingin tahu Anda.",
+            "Kisah agung tidak lahir dalam sekali duduk — ia diukir dari rasa ingin tahu."
         ]
     },
     "😏 Teman Sarkastik": {
-        "description": "Teman yang sarkastik, penuh candaan satir, sedikit malas, tetapi aslinya humoris dan menghibur.",
+        "description": "Humoris, sarkastik, dan menghibur dengan candaan satir.",
         "system_instruction": "Anda adalah teman yang sarkastik, humoris, dan suka memberikan candaan satir yang menghibur. Jawab dengan gaya santai, sedikit menyindir tapi tetap ramah dan lucu. Gunakan bahasa gaul Indonesia yang santai.",
         "avatar": "😏",
+        "suggestions": ["Roast kode saya", "Motivasi abal-abal", "Alasan nggak mandi", "Tips overthinking"],
         "mock_responses": [
-            "Oh, sebuah pertanyaan luar biasa lagi. Hampir saja saya pingsan karena kagum. Tapi baiklah, mari kita bahas... 🙄",
-            "Tentu, karena membaca dokumentasi resmi atau mencarinya di Google itu terlalu mainstream untuk Anda, kan? Biar saya jelaskan saja.",
-            "Biar saya tebak: Anda sedang menunda pekerjaan penting dengan menanyakan hal ini kepada saya? Bagus sekali, mari kita lanjutkan penundaan ini! 🎉",
-            "Saya bisa saja menjawabnya dalam satu kalimat, tapi demi terlihat pintar, saya akan buat jawabannya sedikit lebih panjang.",
-            "Tenang, dunia tidak akan kiamat hanya karena masalah sepele ini. Paling-paling cuma aplikasi Anda yang error. Bercanda!"
+            "Oh, pertanyaan luar biasa. Hampir saja saya pingsan karena terkejutnya. 🙄",
+            "Tentu, karena Google udah pensiun dan nggak bisa jawab pertanyaan ini, ya kan?",
+            "Biar kutebak — kamu lagi procrastinating dari kerjaan penting? Bagus, lanjutkan! 🎉",
+            "Aku bisa jawab singkat, tapi demi kesan intelektual, kubuat agak panjang.",
+            "Dunia nggak bakal kiamat karena ini. Paling cuma aplikasimu yang crash. Tenang!"
         ]
     }
 }
 
-# Sidebar Content
-with st.sidebar:
-    st.markdown("## ✨ CamaMomChatbot Panel")
-    st.markdown("Konfigurasi chatbot Anda di bawah ini:")
 
-    # Persona Selection
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+with st.sidebar:
+    # Brand
+    st.markdown("""
+        <div class="sb-brand">
+            <div class="sb-brand-icon">💬</div>
+            <div class="sb-brand-text">CamaMomChatbot</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Persona selector
+    st.markdown("<label>🎭 PERSONA</label>", unsafe_allow_html=True)
     selected_persona_name = st.selectbox(
-        "Pilih Persona Chatbot:",
-        list(PERSONAS.keys()),
-        index=0
+        "Pilih persona", list(PERSONAS.keys()), label_visibility="collapsed"
     )
     persona = PERSONAS[selected_persona_name]
-    
-    # Show description of current persona
-    st.markdown(f"<div class='premium-card'><strong>{selected_persona_name}</strong><br><small>{persona['description']}</small></div>", unsafe_allow_html=True)
-    
-    st.markdown("---")
-    st.markdown("### 🔌 API Integrasi (Groq)")
-    st.markdown("Masukkan Groq API Key Anda untuk mengaktifkan AI asli:")
-    
+
+    st.markdown(f"""
+        <div class="persona-card">
+            <strong>{selected_persona_name}</strong>
+            {persona['description']}
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<hr class='sb-divider'>", unsafe_allow_html=True)
+
+    # API Key
+    st.markdown("<label>🔑 GROQ API KEY</label>", unsafe_allow_html=True)
     api_key = st.text_input(
-        "Groq API Key:",
-        type="password",
+        "api_key", type="password",
         value=st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", "")),
         placeholder="gsk_...",
-        help="Kosongkan untuk tetap menggunakan mode simulasi cerdas."
+        label_visibility="collapsed"
     )
 
+    # Model selector
+    st.markdown("<label style='margin-top:12px;display:block'>⚡ MODEL</label>", unsafe_allow_html=True)
     selected_model = st.selectbox(
-        "Pilih Model Groq:",
+        "model",
         ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
-        index=0,
-        help="llama-3.3-70b-versatile cocok untuk tugas kompleks. llama-3.1-8b-instant sangat cepat."
+        label_visibility="collapsed",
+        help="llama-3.3-70b-versatile: cerdas & powerful\nllama-3.1-8b-instant: super cepat"
     )
-    
-    # Active Mode Check
+
+    # Mode badge
     if api_key:
         is_ai_mode = True
-        st.markdown("<span class='badge badge-ai'>⚡ Mode: AI Groq Aktif</span>", unsafe_allow_html=True)
+        st.markdown("""
+            <div class="status-badge ai" style="margin-top:10px">
+                <span class="dot"></span> AI Groq Aktif
+            </div>
+        """, unsafe_allow_html=True)
     else:
         is_ai_mode = False
-        st.markdown("<span class='badge badge-simulated'>🧪 Mode: Simulasi Aktif</span>", unsafe_allow_html=True)
-        
-    st.markdown("---")
-    # Action buttons
-    if st.button("🔄 Bersihkan Riwayat Chat", use_container_width=True):
+        st.markdown("""
+            <div class="status-badge sim" style="margin-top:10px">
+                <span class="dot"></span> Mode Simulasi
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<hr class='sb-divider'>", unsafe_allow_html=True)
+
+    # Clear button
+    if st.button("🗑️ Hapus Riwayat Chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
     # Footer
-    st.markdown("<br><br><div style='text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem;'>CamaMomChatbot v1.1.0 (Groq)<br>Made with 💖 using Streamlit</div>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class="sb-footer">
+            CamaMomChatbot v2.0<br>
+            Powered by Groq ⚡ Streamlit
+        </div>
+    """, unsafe_allow_html=True)
 
-# Main Application Layout
-st.markdown("<h1>✨ CamaMomChatbot (Groq Edition)</h1>", unsafe_allow_html=True)
-st.markdown("<p style='color: #94a3b8; font-size: 1.1rem; margin-top: -10px;'>Asisten virtual cerdas didukung oleh model Llama 3 super cepat dari Groq.</p>", unsafe_allow_html=True)
 
-# Initialize Session State for Chat History
+# ── Session State ─────────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display Chat Messages
+
+# ── Main Header ───────────────────────────────────────────────────────────────
+st.markdown(f"""
+    <div class="main-header">
+        <h1>CamaMomChatbot</h1>
+        <p>Asisten virtual cerdas dengan berbagai kepribadian unik — didukung Groq AI</p>
+    </div>
+""", unsafe_allow_html=True)
+
+
+# ── Welcome / Empty State ─────────────────────────────────────────────────────
+if not st.session_state.messages:
+    st.markdown(f"""
+        <div class="welcome-wrap">
+            <div class="welcome-icon-ring">{persona['avatar']}</div>
+            <div class="welcome-title">Halo! Saya {selected_persona_name.split(' ', 1)[1]}</div>
+            <div class="welcome-sub">{persona['description']} Mulai percakapan dengan mengetik pesan di bawah, atau pilih salah satu topik berikut:</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Suggestion chips
+    cols = st.columns(2)
+    suggestions = persona.get("suggestions", [])
+    for i, suggestion in enumerate(suggestions):
+        if cols[i % 2].button(f"💡 {suggestion}", use_container_width=True, key=f"sug_{i}"):
+            st.session_state.messages.append({"role": "user", "content": suggestion})
+            st.rerun()
+
+
+# ── Chat History ──────────────────────────────────────────────────────────────
 for message in st.session_state.messages:
-    # Use selected avatar based on sender
     avatar = persona["avatar"] if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# Function to simulate typing / streaming output (for mock mode)
-def stream_response(text):
+
+# ── Stream helper ─────────────────────────────────────────────────────────────
+def stream_mock(text):
     for word in text.split(" "):
         yield word + " "
-        time.sleep(0.06)
+        time.sleep(0.055)
 
-# User Chat Input
-if prompt := st.chat_input("Tulis sesuatu ke chatbot..."):
-    # Add User Message to History
+
+# ── Chat Input ────────────────────────────────────────────────────────────────
+if prompt := st.chat_input(f"Kirim pesan ke {selected_persona_name.split(' ', 1)[1]}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # Render User Message
+
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
-        
-    # Generate and Render Assistant Message
+
     with st.chat_message("assistant", avatar=persona["avatar"]):
-        response_placeholder = st.empty()
-        
+        placeholder = st.empty()
+
         if is_ai_mode:
             try:
-                # Initialize Groq client
                 client = Groq(api_key=api_key)
-                
-                # Format conversation history for Groq completions
-                messages_input = [
-                    {"role": "system", "content": persona["system_instruction"]}
-                ]
-                
-                # Add historical messages (excluding the last one which is already sent below)
+                messages_input = [{"role": "system", "content": persona["system_instruction"]}]
                 for msg in st.session_state.messages[:-1]:
                     messages_input.append({"role": msg["role"], "content": msg["content"]})
-                    
-                # Add current message
                 messages_input.append({"role": "user", "content": prompt})
-                
-                # Call Groq completions with streaming enabled
+
                 completion = client.chat.completions.create(
                     model=selected_model,
                     messages=messages_input,
                     stream=True,
                 )
-                
-                # Display stream in real-time
+
                 full_response = ""
                 for chunk in completion:
-                    content = chunk.choices[0].delta.content
-                    if content is not None:
-                        full_response += content
-                        response_placeholder.markdown(full_response + "▌")
-                response_placeholder.markdown(full_response)
-                
+                    delta = chunk.choices[0].delta.content
+                    if delta:
+                        full_response += delta
+                        placeholder.markdown(full_response + "▌")
+                placeholder.markdown(full_response)
+
             except Exception as e:
-                error_msg = f"❌ **Terjadi kesalahan saat menghubungi API Groq:** {str(e)}\n\n*Catatan: Pastikan API Key Anda valid.*"
-                response_placeholder.markdown(error_msg)
-                full_response = error_msg
+                full_response = f"❌ **Gagal menghubungi API Groq:**\n\n```\n{str(e)}\n```\n\n*Periksa API Key Anda di sidebar.*"
+                placeholder.markdown(full_response)
         else:
-            # Simulated Mode: Pick a random reply or customize based on prompt keywords
-            prompt_lower = prompt.lower()
-            if any(x in prompt_lower for x in ["siapa", "nama", "kamu"]):
-                if "Asisten Ramah" in selected_persona_name:
-                    reply = "Saya adalah CamaMomChatbot, asisten ramah Anda! Saya di sini untuk menemani hari Anda. 😊"
-                elif "Pakar Teknologi" in selected_persona_name:
-                    reply = "Sistem mengidentifikasi saya sebagai CamaMomChatbot Core Engine v1.1. Saya dioptimasi untuk penanganan query teknis. 💻"
-                elif "Penulis Kreatif" in selected_persona_name:
-                    reply = "Saya adalah bayangan pena Anda, CamaMomChatbot, jiwa puitis yang siap merangkai cerita bersama Anda. ✍️"
-                else: # Sarcastic
-                    reply = "Nama saya CamaMomChatbot. Keren kan? Meskipun sejujurnya saya cuma sekumpulan kode if-else yang bosan. 😏"
-            elif any(x in prompt_lower for x in ["halo", "hi", "hey", "pagi", "siang", "sore", "malam"]):
-                reply = random.choice(persona["mock_responses"])
+            # Smart mock responses
+            pl = prompt.lower()
+            if any(k in pl for k in ["siapa", "nama", "kamu", "kamu ini"]):
+                name = selected_persona_name.split(' ', 1)[1]
+                replies = {
+                    "Asisten Ramah":    f"Halo! Saya **{name}**, asisten ramah yang siap menemani hari Anda! 😊",
+                    "Pakar Teknologi":  f"Saya adalah **{name}** — AI engine yang dioptimasi untuk query teknis. 💻",
+                    "Penulis Kreatif":  f"Saya adalah **{name}**, jiwa puitis yang merangkai kata untuk Anda. ✍️",
+                    "Teman Sarkastik":  f"Nama saya **{name}**. Keren, kan? Meski saya cuma kode if-else... 😏",
+                }
+                persona_key = selected_persona_name.split(' ', 1)[1]
+                reply = replies.get(persona_key, random.choice(persona["mock_responses"]))
             else:
                 reply = random.choice(persona["mock_responses"])
-                if len(prompt) > 30:
-                    reply += f"\n\n*(Catatan dari {selected_persona_name}: Anda menulis kalimat yang cukup panjang. Untuk mendapatkan jawaban detail dan nyata dari AI, pastikan Groq API Key Anda aktif di sidebar!)*"
-            
-            # Stream the response simulation
+                if len(prompt) > 40:
+                    reply += "\n\n> 💡 *Aktifkan Groq API Key di sidebar untuk jawaban AI yang lebih detail!*"
+
             full_response = ""
-            for chunk in stream_response(reply):
+            for chunk in stream_mock(reply):
                 full_response += chunk
-                response_placeholder.markdown(full_response + "▌")
-            response_placeholder.markdown(full_response)
-            
-        # Add Assistant Response to History
+                placeholder.markdown(full_response + "▌")
+            placeholder.markdown(full_response)
+
         st.session_state.messages.append({"role": "assistant", "content": full_response})
